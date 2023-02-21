@@ -1,0 +1,22 @@
+variables:
+  SEMANTIC_TYPE: patch
+
+stages:
+  - build
+
+semantic-version-job:
+  stage: build
+  image: python:3.7.6-slim-buster
+  script:
+    - apt-get update && apt-get install -y git && apt-get install -y curl
+    - echo $APP_VERSION
+    - python3 version.py $SEMANTIC_TYPE $APP_VERSION
+    - source .env
+    - cat $TEST_FILE
+    # - sed -i 's/APP_VERSION=.*/APP_VERSION=new_value/' $TEST_FILE
+    - sed -i "s/\(^APP_VERSION=\).*/\APP_VERSION=$VERSION/"  $TEST_FILE
+    - value=$(<$TEST_FILE)
+    - curl -X PUT  $CI_API_V4_URL/projects/$CI_PROJECT_ID/variables/APP_VERSION --header 'PRIVATE-TOKEN:glpat-uMqSRKiusyejWJYzv3VK'   --form value=$VERSION 
+    - curl -X PUT  $CI_API_V4_URL/projects/$CI_PROJECT_ID/variables/TEST_FILE --header 'PRIVATE-TOKEN:glpat-uMqSRKiusyejWJYzv3VK'   --form value="$value" 
+    - cat $TEST_FILE
+    - echo $APP_VERSION
